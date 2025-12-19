@@ -19,12 +19,6 @@ def generate_circle_dataset(n_points=6, device='cuda'):
     # Alternating labels: 0, 1, 0, 1, 0, 1
     Y = np.array([i % 2 for i in range(n_points)])
 
-    # shuffle dataset
-    perm = np.random.permutation(n_points)
-    X, Y = X[perm], Y[perm]
-    
-
-    
     X = torch.tensor(X, dtype=torch.float32, device=device)
     Y = torch.tensor(Y, dtype=torch.long, device=device)
     

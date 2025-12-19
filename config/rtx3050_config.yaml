@@ -1,0 +1,43 @@
+device: "cuda"
+mixed_precision: true
+seed: 42
+
+circle_experiment:
+  model:
+    type: "fcn"
+    depth: 3
+    width: 2000
+    activation: "relu"
+  training:
+    epochs: 10000
+    batch_size: 6
+    lr: 1e-3
+    loss: "cross_entropy"
+  ntk:
+    compute_interval_epochs: 100
+    double_precision: true
+
+mnist_experiment:
+  model:
+    type: "fcn"
+    depth: 4
+    width: 500
+    activation: "relu"
+  training:
+    epochs: 10000
+    batch_size: 256
+    lr: 1e-3
+    loss: "cross_entropy"
+  ntk:
+    compute_interval_epochs: 5
+    subset_size: 1000
+    double_precision: true
+
+memory:
+  max_gpu_mem_gb: 5.5
+  use_gradient_checkpointing: true
+
+logging:
+  log_dir: "results/logs"
+  plot_dir: "results/plots"
+  save_interval_epochs: 100

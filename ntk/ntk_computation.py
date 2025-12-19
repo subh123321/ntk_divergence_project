@@ -100,9 +100,6 @@ def compute_empirical_ntk_efficient(model, X, device='cuda'):
         elif output.numel() == 1:
             # Single value, squeeze it
             scalar_output = output.squeeze()
-        #elif output.shape[-1] == 2:
-            # Binary classification with 2 outputs - take difference
-            #scalar_output = output[0, 1] - output[0, 0]
         else:
             # Multiple outputs - sum them
             scalar_output = output.sum()
@@ -139,7 +136,7 @@ def compute_empirical_ntk_efficient(model, X, device='cuda'):
     # Compute NTK: K = J @ J^T
     K = torch.mm(J, J.t())  # Shape: (n, n)
     
-    print(f"    ✓ NTK computed: shape {K.shape}, range [{K.min():.2f}, {K.max():.2f}]")
+    print(f" NTK computed: shape {K.shape}, range [{K.min():.2f}, {K.max():.2f}]")
     
     return K
 
