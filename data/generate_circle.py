@@ -1,26 +1,38 @@
 import numpy as np
 import torch
 
-def generate_circle_dataset(n_points=6, device='cuda'):
-    """
-    Generate synthetic circle dataset with alternating labels.
-    
-    Args:
-        n_points: Number of points on unit circle (default: 6)
-        device: 'cuda' or 'cpu'
-    
-    Returns:
-        X: Points on unit circle (n_points, 2)
-        Y: Binary labels (n_points,)
-    """
+def generate_circle_dataset(
+    n_points=6,
+    device='cuda',
+    dtype=torch.float64,
+    mode="hard",
+):
     theta = np.linspace(0, 2 * np.pi, n_points, endpoint=False)
-    X = np.column_stack([np.cos(theta), np.sin(theta)])
-    
-    # Alternating labels: 0, 1, 0, 1, 0, 1
-    Y = np.array([i % 2 for i in range(n_points)])
+    X = np.stack([np.cos(theta), np.sin(theta)], axis=1)
 
-    X = torch.tensor(X, dtype=torch.float32, device=device)
-    Y = torch.tensor(Y, dtype=torch.long, device=device)
+ # Labels control separability
+    if mode == "easy":
+        # Linearly separable
+        Y = np.array([1, 1, 1, 0, 0, 0])
+    elif mode == "medium":
+        # Partially separable
+        Y = np.array([1, 1, 0, 0, 1, 0])
+    elif mode == "hard":
+        # Maximally non-separable (paper default)
+        Y = np.array([i % 2 for i in range(n_points)])
+    else:
+        raise ValueError(f"Unknown mode: {mode}")
+
+    Y_signed = 2 * Y - 1
+
+    X = torch.tensor(X, dtype=dtype, device=device)
+    Y = torch.tensor(Y, dtype=dtype, device=device)
+    Y_signed = torch.tensor(Y_signed, dtype=dtype, device=device)
+
+
+    X=X.double()
+    Y=Y.double()
     
-    return X, Y
+    return X, Y, Y_signed
+
 

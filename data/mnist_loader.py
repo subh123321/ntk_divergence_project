@@ -2,9 +2,9 @@ import torch
 from torchvision import datasets, transforms
 
 def generate_mnist_binary(
-    digits=(0, 1),
-    n_samples=30000,
-    device='cuda'
+    n_samples=2000,
+    device='cuda',
+    dtype=torch.float64
 ):
     transform = transforms.Compose([
         transforms.ToTensor(),
@@ -21,14 +21,15 @@ def generate_mnist_binary(
     X_list, Y_list = [], []
 
     for x, y in dataset:
-        if y in digits:
-            X_list.append(x.view(-1))
-            Y_list.append(y % 2)
+        X_list.append(x.view(-1))
+        Y_list.append(y % 2)   # odd = 1, even = 0
 
         if len(X_list) >= n_samples:
             break
 
-    X = torch.stack(X_list).to(device)
-    Y = torch.tensor(Y_list,dtype=torch.long, device=device)
+    X = torch.stack(X_list).to(device=device, dtype=dtype)
+    Y = torch.tensor(Y_list, dtype=dtype, device=device)
+    Y_signed = 2 * Y - 1
 
-    return X, Y
+    return X, Y, Y_signed
+

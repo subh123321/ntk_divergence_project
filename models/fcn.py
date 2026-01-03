@@ -1,79 +1,40 @@
-from typing import List
 import torch
+import math
 from torch import nn
+from .utils import init_weights_ntk, get_activation
 
-from .utils import get_activation, init_weights_he
 
-
-class FullyConnectedNetwork(nn.Module):
+class NTKFullyConnectedNetwork(nn.Module):
     """
-    Generic fully connected network:
-    - input_dim: flattened input size (e.g., 2 for circle, 28*28 for MNIST)
-    - depth: total number of layers including output
-      * depth >= 2: (input -> hidden -> ... -> hidden -> output)
-    - width: hidden layer width
-    - num_classes: output dimension
+    Fully Connected Network with NTK parameterization.
     """
-    def __init__(
-        self,
-        input_dim: int,
-        num_classes: int,
-        depth: int = 3,
-        width: int = 2000,
-        activation: str = "relu",
-    ) -> None:
 
+    def __init__(self, input_dim, num_classes,depth, width):
         super().__init__()
+        self.num_classes=num_classes
+        self.width = width
+        self.activation = get_activation()
 
-        if depth < 2:
-            raise ValueError("depth must be >= 2")
+        self.layers = nn.ModuleList()
+        self.layers.append(nn.Linear(input_dim, width))
 
-        self.num_classes = num_classes  # Store for forward pass
-        act = get_activation(activation)
-        
-        layers: List[nn.Module] = []
-
-        # input -> first hidden
-        layers.append(nn.Linear(input_dim, width))
-        layers.append(act)
-
-        # hidden layers
         for _ in range(depth - 2):
-            layers.append(nn.Linear(width, width))
-            layers.append(act)
+            self.layers.append(nn.Linear(width, width))
 
-        # FIXED: last hidden -> output (single output for binary classification)
-        if num_classes == 2:
-            layers.append(nn.Linear(width, 1))  # Binary: single output
-        else:
-            layers.append(nn.Linear(width, num_classes))  # Multi-class
+        self.layers.append(nn.Linear(width, 1))
 
-        self.net = nn.Sequential(*layers)
-        self.apply(init_weights_he)
+        # NTK initialization
+        self.apply(init_weights_ntk)
 
-    def forward(self, x: torch.Tensor) -> torch.Tensor:
-        """
-        Forward pass - FIXED for NTK computation.
-        
-        Args:
-            x: Input tensor
-               - circle: (batch_size, 2)
-               - MNIST: (batch_size, 784) or (batch_size, 1, 28, 28)
-        
-        Returns:
-            output: (batch_size,) for binary, (batch_size, num_classes) for multi-class
-        """
-        # Flatten if needed
+    def forward(self, x):
         if x.dim() > 2:
             x = x.view(x.size(0), -1)
-        
-        # Forward through network
-        out = self.net(x)
-        
-        # Handle binary classification - return scalar per sample
-        if self.num_classes == 2:
-            # Output is already (batch_size, 1), squeeze to (batch_size,)
-            return out.squeeze(-1)
-        else:
-            # Multi-class: keep as (batch_size, num_classes)
-            return out
+
+        h = x
+        for layer in self.layers[:-1]:
+            h = layer(h)
+            
+            h = math.sqrt(2.0 / self.width) * self.activation(h)
+
+
+        return self.layers[-1](h).squeeze(-1)
